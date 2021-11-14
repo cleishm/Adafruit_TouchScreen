@@ -56,6 +56,24 @@ public:
   TouchScreen(uint8_t xp, uint8_t yp, uint8_t xm, uint8_t ym, uint16_t rx);
 
   /**
+   * @brief Construct a new Touch Screen object
+   *
+   * Use this constructor when using analog pins that are not OUTPUT capable.
+   * A digital pin must be connected to each analog pin.
+   *
+   * @param xp X+ pin. Must be an analog pin
+   * @param yp Y+ pin. Must be an analog pin
+   * @param dyp Digital pin connected to Y+ pin (yp)
+   * @param xm X- pin. Can be a digital pin
+   * @param dxm Digital pin connected to X- pin (xm)
+   * @param ym Y- pin. Can be a digital pin
+   * @param rx The resistance in ohms between X+ and X- to calibrate pressure
+   * sensing
+   */
+  TouchScreen(uint8_t xp, uint8_t yp, uint8_t dyp, uint8_t xm, uint8_t dxm,
+          uint8_t ym, uint16_t rx);
+
+  /**
    * @brief **NOT IMPLEMENTED** Test if the screen has been touched
    *
    * @return true : touch detected false: no touch detected
@@ -68,7 +86,7 @@ public:
   int16_t pressureThreshhold; ///< Pressure threshold for `isTouching`
 
 private:
-  uint8_t _yp, _ym, _xm, _xp;
+  uint8_t _yp, _dyp, _ym, _xm, _dxm, _xp;
   uint16_t _rxplate;
 
 #if defined(USE_FAST_PINIO)

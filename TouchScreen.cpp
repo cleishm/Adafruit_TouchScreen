@@ -83,16 +83,23 @@ TSPoint TouchScreen::getPoint(void) {
   valid = 1;
 
   pinMode(_yp, INPUT);
+  if (_xm != _dxm) {
+    pinMode(_xm, INPUT);
+  }
+
+  if (_yp != _dyp) {
+    pinMode(_dyp, INPUT);
+  }
   pinMode(_ym, INPUT);
   pinMode(_xp, OUTPUT);
-  pinMode(_xm, OUTPUT);
+  pinMode(_dxm, OUTPUT);
 
 #if defined(USE_FAST_PINIO)
   *xp_port |= xp_pin;
   *xm_port &= ~xm_pin;
 #else
   digitalWrite(_xp, HIGH);
-  digitalWrite(_xm, LOW);
+  digitalWrite(_dxm, LOW);
 #endif
 
 #ifdef __arm__
@@ -119,8 +126,8 @@ TSPoint TouchScreen::getPoint(void) {
   x = (1023 - samples[NUMSAMPLES / 2]);
 
   pinMode(_xp, INPUT);
-  pinMode(_xm, INPUT);
-  pinMode(_yp, OUTPUT);
+  pinMode(_dxm, INPUT);
+  pinMode(_dyp, OUTPUT);
   pinMode(_ym, OUTPUT);
 
 #if defined(USE_FAST_PINIO)
@@ -128,7 +135,7 @@ TSPoint TouchScreen::getPoint(void) {
   *yp_port |= yp_pin;
 #else
   digitalWrite(_ym, LOW);
-  digitalWrite(_yp, HIGH);
+  digitalWrite(_dyp, HIGH);
 #endif
 
 #ifdef __arm__
@@ -158,7 +165,7 @@ TSPoint TouchScreen::getPoint(void) {
   // Set Y- to VCC
   // Hi-Z X- and Y+
   pinMode(_xp, OUTPUT);
-  pinMode(_yp, INPUT);
+  pinMode(_dyp, INPUT);
 
 #if defined(USE_FAST_PINIO)
   *xp_port &= ~xp_pin;
@@ -193,23 +200,34 @@ TSPoint TouchScreen::getPoint(void) {
   return TSPoint(x, y, z);
 }
 
+
 TouchScreen::TouchScreen(uint8_t xp, uint8_t yp, uint8_t xm, uint8_t ym,
-                         uint16_t rxplate = 0) {
+                         uint16_t rxplate = 0)
+    : TouchScreen::TouchScreen(xp, yp, yp, xm, xm, ym, rxplate)
+{
+}
+
+
+TouchScreen::TouchScreen(uint8_t xp, uint8_t yp, uint8_t dyp, uint8_t xm,
+                         uint8_t dxm, uint8_t ym, uint16_t rxplate = 0)
+{
   _yp = yp;
+  _dyp = dyp;
   _xm = xm;
+  _dxm = dxm;
   _ym = ym;
   _xp = xp;
   _rxplate = rxplate;
 
 #if defined(USE_FAST_PINIO)
   xp_port = portOutputRegister(digitalPinToPort(_xp));
-  yp_port = portOutputRegister(digitalPinToPort(_yp));
-  xm_port = portOutputRegister(digitalPinToPort(_xm));
+  yp_port = portOutputRegister(digitalPinToPort(_dyp));
+  xm_port = portOutputRegister(digitalPinToPort(_dxm));
   ym_port = portOutputRegister(digitalPinToPort(_ym));
 
   xp_pin = digitalPinToBitMask(_xp);
-  yp_pin = digitalPinToBitMask(_yp);
-  xm_pin = digitalPinToBitMask(_xm);
+  yp_pin = digitalPinToBitMask(_dyp);
+  xm_pin = digitalPinToBitMask(_dxm);
   ym_pin = digitalPinToBitMask(_ym);
 #endif
 
@@ -221,15 +239,18 @@ TouchScreen::TouchScreen(uint8_t xp, uint8_t yp, uint8_t xm, uint8_t ym,
  * @return int the X measurement
  */
 int TouchScreen::readTouchX(void) {
-  pinMode(_yp, INPUT);
+  pinMode(_dyp, INPUT);
+  if (_yp != _dyp) {
+    pinMode(_yp, INPUT);
+  }
   pinMode(_ym, INPUT);
-  digitalWrite(_yp, LOW);
+  digitalWrite(_dyp, LOW);
   digitalWrite(_ym, LOW);
 
   pinMode(_xp, OUTPUT);
   digitalWrite(_xp, HIGH);
-  pinMode(_xm, OUTPUT);
-  digitalWrite(_xm, LOW);
+  pinMode(_dxm, OUTPUT);
+  digitalWrite(_dxm, LOW);
 
   return (1023 - analogRead(_yp));
 }
@@ -240,12 +261,15 @@ int TouchScreen::readTouchX(void) {
  */
 int TouchScreen::readTouchY(void) {
   pinMode(_xp, INPUT);
-  pinMode(_xm, INPUT);
+  pinMode(_dxm, INPUT);
+  if (_xm != _dxm) {
+    pinMode(_xm, INPUT);
+  }
   digitalWrite(_xp, LOW);
-  digitalWrite(_xm, LOW);
+  digitalWrite(_dxm, LOW);
 
-  pinMode(_yp, OUTPUT);
-  digitalWrite(_yp, HIGH);
+  pinMode(_dyp, OUTPUT);
+  digitalWrite(_dyp, HIGH);
   pinMode(_ym, OUTPUT);
   digitalWrite(_ym, LOW);
 
@@ -266,10 +290,16 @@ uint16_t TouchScreen::pressure(void) {
   digitalWrite(_ym, HIGH);
 
   // Hi-Z X- and Y+
-  digitalWrite(_xm, LOW);
-  pinMode(_xm, INPUT);
-  digitalWrite(_yp, LOW);
-  pinMode(_yp, INPUT);
+  digitalWrite(_dxm, LOW);
+  pinMode(_dxm, INPUT);
+  if (_xm != _dxm) {
+    pinMode(_xm, INPUT);
+  }
+  digitalWrite(_dyp, LOW);
+  pinMode(_dyp, INPUT);
+  if (_yp != _dyp) {
+    pinMode(_yp, INPUT);
+  }
 
   int z1 = analogRead(_xm);
   int z2 = analogRead(_yp);
