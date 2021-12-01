@@ -190,7 +190,38 @@ TSPoint TouchScreen::getPoint(void) {
     z = 0;
   }
 
-  return TSPoint(x, y, z);
+  switch (_rotation) {
+  case 3:
+    if (_remap) {
+      x = map(x, _minX, _maxX, 0, _screenHeight);
+      y = map(y, _minY, _maxY, 0, _screenWidth);
+    } else {
+      x = map(x, 0, _screenWidth, 0, _screenHeight);
+      y = map(y, 0, _screenHeight, 0, _screenWidth);
+    }
+    return TSPoint(_screenWidth - y, x, z);
+  case 2:
+    if (_remap) {
+      x = map(x, _minX, _maxX, 0, _screenWidth);
+      y = map(y, _minY, _maxY, 0, _screenHeight);
+    }
+    return TSPoint(_screenWidth - x, _screenHeight - y, z);
+  case 1:
+    if (_remap) {
+      x = map(x, _minX, _maxX, 0, _screenHeight);
+      y = map(y, _minY, _maxY, 0, _screenWidth);
+    } else {
+      x = map(x, 0, _screenWidth, 0, _screenHeight);
+      y = map(y, 0, _screenHeight, 0, _screenWidth);
+    }
+    return TSPoint(y, _screenHeight - x, z);
+  default:
+    if (_remap) {
+      x = map(x, _minX, _maxX, 0, _screenWidth);
+      y = map(y, _minY, _maxY, 0, _screenHeight);
+    }
+    return TSPoint(x, y, z);
+  }
 }
 
 TouchScreen::TouchScreen(uint8_t xp, uint8_t yp, uint8_t xm, uint8_t ym,
@@ -215,6 +246,7 @@ TouchScreen::TouchScreen(uint8_t xp, uint8_t yp, uint8_t xm, uint8_t ym,
 
   pressureThreshhold = 10;
 }
+
 /**
  * @brief Read the touch event's X value
  *
@@ -288,4 +320,40 @@ uint16_t TouchScreen::pressure(void) {
   } else {
     return (1023 - (z2 - z1));
   }
+}
+
+/**
+ * @brief Calibrate the touch screen using a linear remapping
+ *
+ * @param minX Minimum x value read from touchscreen
+ * @param maxX Maximum x value read from touchscreen
+ * @param minY Minimum y value read from touchscreen
+ * @param maxY Maximum y value read from touchscreen
+ * @param screenWidth Width of the screen
+ * @param screenHeight Height of the screen
+ */
+void TouchScreen::calibrate(int16_t minX, int16_t maxX, int16_t minY, int16_t maxY,
+          uint16_t screenWidth, uint16_t screenHeight)
+{
+  _remap = true;
+  _minX = minX;
+  _maxX = maxX;
+  _minY = minY;
+  _maxY = maxY;
+  _screenWidth = screenWidth;
+  _screenHeight = screenHeight;
+}
+
+/**
+ * @brief Set the rotation of the touchscreen
+ *
+ * @param rotation Set the rotation to 0, 1, 2, or 3
+ */
+void TouchScreen::rotate(uint8_t rotation)
+{
+  if (rotation > 3) {
+    return;
+  }
+
+  _rotation = rotation;
 }

@@ -65,11 +65,18 @@ public:
   int readTouchY();
   int readTouchX();
   TSPoint getPoint();
+  void calibrate(int16_t minX, int16_t maxX, int16_t minY, int16_t maxY,
+          uint16_t screenWidth, uint16_t screenHeight);
+  void rotate(uint8_t rotation);
   int16_t pressureThreshhold; ///< Pressure threshold for `isTouching`
 
 private:
   uint8_t _yp, _ym, _xm, _xp;
   uint16_t _rxplate;
+  bool _remap = false;
+  int16_t _minX, _maxX, _minY, _maxY;
+  uint16_t _screenWidth, _screenHeight;
+  uint8_t _rotation = 0;
 
 #if defined(USE_FAST_PINIO)
   volatile RwReg *xp_port, *yp_port, *xm_port, *ym_port;
